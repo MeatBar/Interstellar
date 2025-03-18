@@ -29,7 +29,7 @@ def _extract_scenario_number_from_path(path: str) -> int:
     """Extract the number of a scenario given its name in the file system
 
     For example, the file
-        ../resources/scenarios/scenario_5.json
+        ../resources_a/scenarios/scenario_5.json
 
     Will be converted into the integer 5.
 
@@ -39,19 +39,19 @@ def _extract_scenario_number_from_path(path: str) -> int:
     return int(re.match(r'.*scenario_(\d+)\.json', path).group(1))
 
 
-scenario_groups = os.listdir(Path('../resources/scenarios'))
+scenario_groups = os.listdir(Path('../resources_a/scenarios'))
 
-scenario_paths = {group: sorted(os.listdir(join(Path('../resources/scenarios'), group)),
+scenario_paths = {group: sorted(os.listdir(join(Path('../resources_a/scenarios'), group)),
                                 key=lambda path: _extract_scenario_number_from_path(path))
                   for group in scenario_groups}
 
 for group, files in scenario_paths.items():
-    scenario_paths[group] = [join(Path('../resources/scenarios'), group, f) for f in files]
+    scenario_paths[group] = [join(Path('../resources_a/scenarios'), group, f) for f in files]
 
 scenario_groups = sorted(scenario_groups,
                          key=lambda group: _extract_scenario_number_from_path(scenario_paths[group][0]))
 
-with open('../resources/scenario_names.json', 'r') as f:
+with open('../resources_a/scenario_names.json', 'r') as f:
     scenario_names = json.load(f)
     scenario_names = {int(number): name for number, name in scenario_names.items()}
 
