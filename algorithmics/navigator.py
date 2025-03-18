@@ -2,73 +2,71 @@ from typing import List, Tuple
 
 import networkx as nx
 
-from enemy.enemy import Enemy
-from enemy.black_hole import BlackHole
-from enemy.asteroids_zone import AsteroidsZone
+from algorithmics.enemy.enemy import Enemy
+from algorithmics.utils.coordinate import Coordinate
 
-from utils.coordinate import Coordinate
 
-def calculate_rect_boundary(enemies: List[Enemy], source: Coordinate, target: Coordinate) -> Tuple[Coordinate, Coordinate]:
-    """Calculates the boundary of the rectangle that contains all the objects
-    
-    return a tuple with the minimum and maximum coordinates of the rectangle
+def grid_to_pos(i, j, sample_size, min_x, min_y):
     """
-    min_coordinate = Coordinate(min(source.x, target.x), min(source.y, target.y))
-    max_coordinate = Coordinate(max(source.x, target.x), max(source.y, target.y))
-    
-    astroids = [enemy for enemy in enemies if enemy.__class__.__name__ == 'AsteroidsZone']
-    black_holes = [enemy for enemy in enemies if enemy.__class__.__name__ == 'BlackHole']
-    
-    for astroid in astroids:
-        for coordinate in astroid.boundary:
-            if coordinate.x < min_coordinate.x:
-                min_coordinate.x = coordinate.x
-            if coordinate.y < min_coordinate.y:
-                min_coordinate.y = coordinate.y
-            if coordinate.x > max_coordinate.x:
-                max_coordinate.x = coordinate.x
-            if coordinate.y > max_coordinate.y:
-                max_coordinate.y = coordinate.y
-            
-    for black_hole in black_holes:
-        if black_hole.center.x - black_hole.radius < min_coordinate.x:
-            min_coordinate.x = black_hole.center.x - black_hole.radius
-        if black_hole.center.y - black_hole.radius < min_coordinate.y:
-            min_coordinate.y = black_hole.center.y - black_hole.radius
-        if black_hole.center.x + black_hole.radius > max_coordinate.x:
-            max_coordinate.x = black_hole.center.x + black_hole.radius
-        if black_hole.center.y + black_hole.radius > max_coordinate.y:
-            max_coordinate.y = black_hole.center.y + black_hole.radius
-    
-    return min_coordinate, max_coordinate
-    
-#limited blackhole support
-def make_grid(enemies: List[Enemy], sample_size :int = 8) -> nx.Graph:
-    """Creates a graph from the list of enemies
+    Converts grid coordinates to position coordinates
+    :param i: grid position
+    :param j: grid position
+    :param sample_size: size of grid
+    :param min_x: starting point of the grid in x
+    :param min_y: starting point of the grid in y
+    :return: x,y position of (i,j) in the map
+    """
+    return min_x + i * sample_size, min_y + j * sample_size
 
-    :param enemies: list of enemies
-    :return: graph constructed
+
+def weight_function(u: Coordinate, v: Coordinate) -> float:
+    """
+    Weight function for the edges of the graph
+    :param u: source node
+    :param v: target node
+    :return: weight of the edge
+    """
+    if u.field_type == 1 or v.field_type == 1 or u.field_type == 2 or u.field_type == 2:
+        return float('inf')
+    return u.distance_to(v)
+
+
+def grid_to_graph(grid: List[List[int]]) -> nx.Graph:
+    """
+    Converts a grid to a graph
+    :param grid: 0 if empty, 1 if asteroid, 2 if black hole
+    :return: graph with nodes named (x, y)
     """
     graph = nx.Graph()
-    astroids = [enemy for enemy in enemies if enemy.__class__.__name__ == 'AsteroidsZone']
-    black_holes = [enemy for enemy in enemies if enemy.__class__.__name__ == 'BlackHole']
-    
-    grid = [[0]*sample_size] * sample_size
-    
-    #Uristic:
-    # 0 - empty
-    # 1 - astroid
-    # 2 - blackhole
-    # we divide all the coordinates by max_coordinate to get a value between 0 and 1
-    # then we multiply by sample_size to get a value between 0 and sample_size
-    for astroid in astroids:
-        normal_coordinates = []
-        for coordinate in astroid.boundary:
-            normal_coordinates.append(coordinate * (sample_size / max_coordinate))
-    
-    return grid
+    node_count = 0
+    for i in range(len(grid)):
+        for j in range(len(grid[0])):
+            graph.add_node(Coordinate(i, j))
+            node_count += 1
 
-    
+    for i in range(len(grid)):
+        for j in range(len(grid[0])):
+            if grid[i][j] == 1:
+                continue
+            u = None
+            v = None
+            if i > 0 and grid[i - 1][j] == 0:
+                u = Coordinate(i, j, grid[i][j])
+                v = Coordinate(i - 1, j, grid[i - 1][j])
+            if j > 0 and grid[i][j - 1] == 0:
+                u = Coordinate(i, j, grid[i][j])
+                v = Coordinate(i, j - 1, grid[i][j-1])
+            if i < len(grid) - 1 and grid[i + 1][j] == 0:
+                u = Coordinate(i, j, grid[i][j])
+                v = Coordinate(i + 1, j, grid[i + 1][j])
+            if j < len(grid[0]) - 1 and grid[i][j + 1] == 0:
+                u = Coordinate(i, j, grid[i][j])
+                v = Coordinate(i, j + 1, grid[i][j+1])
+            if u and v:
+                graph.add_edge(u, v, weight=weight_function(u, v))
+    return graph
+
+
 def calculate_path(source: Coordinate, target: Coordinate, enemies: List[Enemy]) -> Tuple[List[Coordinate], nx.Graph]:
     """Calculates a path from source to target without any detection
 
@@ -86,10 +84,3 @@ def calculate_path(source: Coordinate, target: Coordinate, enemies: List[Enemy])
     # Note that to be accepted, the returned path must not be detected by the bandits at any point!
 
     return [source, target], nx.Graph()
-
-if __name__ == '__main__':
-    #test enemy
-    AsteroidsZone(Coordinate(0,0), 1)
-    
-    grid = make_grid([])
-    print(grid)
