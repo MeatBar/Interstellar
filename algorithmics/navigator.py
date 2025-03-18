@@ -1,108 +1,47 @@
 from typing import List, Tuple
 
+import networkx
 import networkx as nx
 
-from enemy.enemy import Enemy
-from enemy.black_hole import BlackHole
-from enemy.asteroids_zone import AsteroidsZone
+from algorithmics.enemy.enemy import Enemy
+from algorithmics.utils.coordinate import Coordinate
 
-from utils.coordinate import Coordinate
 
-#todo : ADD 1 to each edge of grid to allow manuevering around obstacles
+def calculate_path(source: Coordinate, target: Coordinate, enemies: List[Enemy]) -> Tuple[List[Coordinate], nx.Graph]:
+    """Calculates a path from source to target without any detection
 
-class Navigator:
-        
-    def calculate_rect_boundary(enemies: List[Enemy], source: Coordinate, target: Coordinate) -> Tuple[Coordinate, Coordinate]:
-        """Calculates the boundary of the rectangle that contains all the objects
-        
-        return a tuple with the minimum and maximum coordinates of the rectangle
-        """
-        min_coordinate = Coordinate(min(source.x, target.x), min(source.y, target.y))
-        max_coordinate = Coordinate(max(source.x, target.x), max(source.y, target.y))
-        
-        astroids = [enemy for enemy in enemies if enemy.__class__.__name__ == 'AsteroidsZone']
-        black_holes = [enemy for enemy in enemies if enemy.__class__.__name__ == 'BlackHole']
-        
-        for astroid in astroids:
-            for coordinate in astroid.boundary:
-                if coordinate.x < min_coordinate.x:
-                    min_coordinate.x = coordinate.x
-                if coordinate.y < min_coordinate.y:
-                    min_coordinate.y = coordinate.y
-                if coordinate.x > max_coordinate.x:
-                    max_coordinate.x = coordinate.x
-                if coordinate.y > max_coordinate.y:
-                    max_coordinate.y = coordinate.y
-                
-        for black_hole in black_holes:
-            if black_hole.center.x - black_hole.radius < min_coordinate.x:
-                min_coordinate.x = black_hole.center.x - black_hole.radius
-            if black_hole.center.y - black_hole.radius < min_coordinate.y:
-                min_coordinate.y = black_hole.center.y - black_hole.radius
-            if black_hole.center.x + black_hole.radius > max_coordinate.x:
-                max_coordinate.x = black_hole.center.x + black_hole.radius
-            if black_hole.center.y + black_hole.radius > max_coordinate.y:
-                max_coordinate.y = black_hole.center.y + black_hole.radius
-        
-        return min_coordinate, max_coordinate
-        
-    def normalize_coordinate(coordinates: Coordinate, min_coordinate: Coordinate, max_coordinate: Coordinate, sample_size: int) -> Coordinate:
-        move_x = min(min_coordinate.x, 0)
-        move_y = min(min_coordinate.y, 0)
-        max_coordinate = max(max_coordinate.x, max_coordinate.y)
-        
-        stretch_factor = sample_size/max_coordinate
-        return Coordinate(round((coordinates.x + move_x) * stretch_factor), round((coordinates.y + move_y) * stretch_factor())) 
+    Note: The path must start at the source coordinate and end at the target coordinate!
 
-    #limited blackhole support
-    def make_grid(enemies: List[Enemy], sample_size :int = 8) -> nx.Graph:
-        """Creates a graph from the list of enemies
+    :param source: source coordinate of the spaceship
+    :param target: target coordinate of the spaceship
+    :param enemies: list of enemies along the way
+    :return: list of calculated pathway points and the graph constructed
+    """
 
-        :param enemies: list of enemies
-        :return: graph constructed
-        """
-        min_coordinate, max_coordinate = calculate_rect_boundary(enemies, Coordinate(0,0), Coordinate(10,10))
-        
-        astroids = [enemy for enemy in enemies if enemy.__class__.__name__ == 'AsteroidsZone']
-        black_holes = [enemy for enemy in enemies if enemy.__class__.__name__ == 'BlackHole']
-        
-        grid = [[0]*sample_size] * sample_size
-        
-        #Uristic:
-        # 0 - empty
-        # 1 - astroid
-        # 2 - blackhole
-        # we divide all the coordinates by max_coordinate to get a value between 0 and 1
-        # then we multiply by sample_size to get a value between 0 and sample_size
-        for astroid in astroids:
-            normal_coordinates = []
-            for coordinate in astroid.boundary:
-                normal_coordinates.append(normalize_coordinate(coordinate, min_coordinate, max_coordinate, sample_size))
-        
-        return grid
+    # Your objective is to write an algorithm that considering all of the above threats will generate the shortest
+    # possible path you can calculate from source to target.
+    #
+    # Note that to be accepted, the returned path must not be detected by the bandits at any point!
 
-        
-    def calculate_path(source: Coordinate, target: Coordinate, enemies: List[Enemy]) -> Tuple[List[Coordinate], nx.Graph]:
-        """Calculates a path from source to target without any detection
+    return [source, target], nx.Graph()
 
-        Note: The path must start at the source coordinate and end at the target coordinate!
+def get_closest_point_on_graph(target_coord,sample_size,min_x,max_x,min_y,max_y):
+    normalized_coord = Navigator.normalize_coordinate(target_coord)
 
-        :param source: source coordinate of the spaceship
-        :param target: target coordinate of the spaceship
-        :param enemies: list of enemies along the way
-        :return: list of calculated pathway points and the graph constructed
-        """
+    normalized_coord.x = round(normalized_coord.x)
+    normalized_coord.y = round(normalized_coord.y)
 
-        # Your objective is to write an algorithm that considering all of the above threats will generate the shortest
-        # possible path you can calculate from source to target.
-        #
-        # Note that to be accepted, the returned path must not be detected by the bandits at any point!
+    return Navigator.invertNormalization(normalized_coord)
 
-        return [source, target], nx.Graph()
 
-if __name__ == '__main__':
-    #test enemy
-    AsteroidsZone(Coordinate(0,0), 1)
-    
-    grid = make_grid([])
-    print(grid)
+def translate_edgelist_to_path(edge_list: List[Tuple[Coordinate]]) -> List[Coordinate]:
+    return [edge[0] for edge in edge_list] + [edge_list[-1][1]]
+
+def dist(a, b):
+    return a.distance_to(b)
+def get_edgelist_from_graph(G,source,target,sample_size,min_x,max_x,min_y,max_y):
+    source_on_graph = get_closest_point_on_graph(source,sample_size,min_x,max_x,min_y,max_y)
+    target_on_graph = get_closest_point_on_graph(target,sample_size,min_x,max_x,min_y,max_y)
+
+    path = networkx.astar_path(G,source_on_graph,target_on_graph,heuristic=dist,weight='weight')
+    return path
