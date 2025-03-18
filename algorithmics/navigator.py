@@ -2,6 +2,7 @@ from typing import List, Tuple
 
 import networkx as nx
 import shapely as shp
+import shapely.geometry
 
 from enemy.enemy import Enemy
 from enemy.black_hole import BlackHole
@@ -67,6 +68,10 @@ class Navigator:
             if black_hole.center.y + black_hole.radius > max_coordinate.y:
                 max_coordinate.y = black_hole.center.y + black_hole.radius
 
+        min_coordinate.x -= 1
+        min_coordinate.y -= 1
+        max_coordinate.x += 1
+        max_coordinate.y += 1
         return min_coordinate, max_coordinate
 
     def calc_stretch_factor_and_move(self) -> None:
@@ -84,6 +89,13 @@ class Navigator:
         """
         if u.field_type == 1 or v.field_type == 1 or u.field_type == 2 or u.field_type == 2:
             return float('inf')
+        line = shapely.geometry.LineString([[u.x,u.y], [v.x,v.y]])
+        astroids = [enemy for enemy in self.enemies if enemy.__class__.__name__ == 'AsteroidsZone']
+        black_holes = [enemy for enemy in self.enemies if enemy.__class__.__name__ == 'BlackHole']
+        for astroid in astroids:
+            polygon = shapely.geometry.Polygon(astroid.boundary)
+            if shp.intersects(polygon, line):
+                return float('inf')
         return u.distance_to(v)
 
     def normalize_coordinate(self, coordinates: Coordinate) -> Coordinate:
@@ -96,7 +108,7 @@ class Navigator:
         y = (j / self.stretch_factor) - self.move_y
         return Coordinate(x, y)
 
-    def make_grid(self) -> nx.Graph:
+    def make_grid(self) -> List[List[int]]:
         """Creates a graph from the list of enemies, limited blackhole support
             :param enemies: list of enemies
             :return: graph constructed
@@ -121,39 +133,6 @@ class Navigator:
 
         return grid
 
-    def grid_to_graph(self, grid: List[List[int]]) -> nx.Graph:
-        """
-        converts
-        :param grid:
-        :return:
-        """
-        astroids = [enemy for enemy in self.enemies if enemy.__class__.__name__ == 'AsteroidsZone']
-        black_holes = [enemy for enemy in self.enemies if enemy.__class__.__name__ == 'BlackHole']
-        
-        grid = [[0]*self.sample_size] * self.sample_size
-        
-        #Uristic:
-        # 0 - empty
-        # 1 - astroid
-        # 2 - blackhole
-        # we divide all the coordinates by max_coordinate to get a value between 0 and 1
-        # then we multiply by sample_size to get a value between 0 and sample_size
-        polygons = []
-        for astroid in astroids:
-            normal_coordinates = []
-            for coordinate in astroid.boundary:
-                normal_coordinates.append(
-                    self.normalize_coordinate(coordinate))
-
-            polygons.append(shp.Polygon(normal_coordinates))
-
-        for x in range(self.sample_size):
-            for y in range(self.sample_size):
-                for polygon in polygons:
-                    if polygon.contains(shp.Point(x, y)):
-                        grid[x][y] = 1
-
-        return grid
 
     def grid_to_graph(self, grid: List[List[int]]) -> nx.Graph:
         """
@@ -165,29 +144,25 @@ class Navigator:
         node_count = 0
         for i in range(len(grid)):
             for j in range(len(grid[0])):
-                graph.add_node(Coordinate(i, j))
+                x, y = self.grid_to_pos(i, j).pos()
+                graph.add_node(Coordinate(x, y, grid[i][j]))
                 node_count += 1
-
+        count = 0
         for i in range(len(grid)):
             for j in range(len(grid[0])):
-                if grid[i][j] == 1:
-                    continue
-                u = None
-                v = None
                 # TODO: if running time is a problem, could maybe cut this by half by only doing right and down
-                if i > 0 and grid[i - 1][j] == 0:
-                    u = Coordinate(*self.grid_to_pos(i, j).pos(), grid[i][j])
+                u = Coordinate(*self.grid_to_pos(i, j).pos(), grid[i][j])
+                if i > 0:
                     v = Coordinate(*self.grid_to_pos(i - 1, j).pos(), grid[i - 1][j])
-                if j > 0 and grid[i][j - 1] == 0:
-                    u = Coordinate(*self.grid_to_pos(i, j).pos(), grid[i][j])
+                    graph.add_edge(u, v, weight=self.weight_function(u, v))
+                if j > 0:
                     v = Coordinate(*self.grid_to_pos(i, j-1).pos(), grid[i][j-1])
-                if i < len(grid) - 1 and grid[i + 1][j] == 0:
-                    u = Coordinate(*self.grid_to_pos(i, j).pos(), grid[i][j])
+                    graph.add_edge(u, v, weight=self.weight_function(u, v))
+                if i < len(grid) - 1:
                     v = Coordinate(*self.grid_to_pos(i+1, j).pos(), grid[i + 1][j])
-                if j < len(grid[0]) - 1 and grid[i][j + 1] == 0:
-                    u = Coordinate(*self.grid_to_pos(i, j).pos(), grid[i][j])
+                    graph.add_edge(u, v, weight=self.weight_function(u, v))
+                if j < len(grid[0]) - 1:
                     v = Coordinate(*self.grid_to_pos(i, j+1).pos(), grid[i][j+1])
-                if u and v:
                     graph.add_edge(u, v, weight=self.weight_function(u, v))
         return graph
 
@@ -199,29 +174,22 @@ class Navigator:
 
         return self.grid_to_pos(normalized_coord.x, normalized_coord.y)
 
-    def translate_edgelist_to_path(self, edge_list: List[Tuple[Coordinate]]) -> List[Coordinate]:
-        return [edge[0] for edge in edge_list] + [edge_list[-1][1]]
+    def translate_edgelist_to_path(self, edge_list: List[Coordinate]) -> List[Coordinate]:
+        return [edge for edge in edge_list] + [edge_list[-1]]
 
 
     def get_edgelist_from_graph(self, G):
         source_on_graph = self.get_closest_point_on_graph(self.source)
         target_on_graph = self.get_closest_point_on_graph(self.target)
 
-        def dist(a, b):
-            return a.distance_to(b)
-
-        path = nx.astar_path(G, source_on_graph, target_on_graph, heuristic=dist, weight='weight')
+        path = nx.astar_path(G, source_on_graph, target_on_graph, weight='weight')
         return path
 
     def get_solution(self):
         grid = self.make_grid()
-        print("GGG", grid)
         graph = self.grid_to_graph(grid)
-        print("PPP", graph)
         edge_list = self.get_edgelist_from_graph(graph)
-        print("EEE", edge_list)
         solution = self.translate_edgelist_to_path(edge_list)
-        print("SSS", solution)
         return [self.source, *solution, self.target]
 
 
@@ -240,6 +208,6 @@ def calculate_path(source: Coordinate, target: Coordinate, enemies: List[Enemy])
     # possible path you can calculate from source to target.
     #
     # Note that to be accepted, the returned path must not be detected by the bandits at any point!
-    nav = Navigator(enemies, source, target, 20)
+    nav = Navigator(enemies, source, target, 200)
     solution = nav.get_solution()
     return solution, nx.Graph()

@@ -113,7 +113,7 @@ class Coordinate:
         return math.sqrt(self.x ** 2 + self.y ** 2)
 
     def __str__(self) -> str:
-        return f'Coordinate(x={self.x}, y={self.y})'
+        return f'Coordinate(x={self.x}, y={self.y}, type={self.field_type})'
 
     def __repr__(self) -> str:
         return str(self)
