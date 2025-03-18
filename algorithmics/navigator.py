@@ -20,13 +20,20 @@ class Navigator:
         self.target = target
         self.sample_size = sample_size
         
+        
         min_coordinate, max_coordinate = self.calculate_rect_boundary()      
         self.min_coordinate = min_coordinate
         self.max_coordinate = max_coordinate
   
+        #Need to call calculate_stretch_factor_and_move to update these values
         self.stretch_factor = 1
         self.move_x = 0
         self.move_y = 0
+        self.calculate_stretch_factor_and_move() #Update those values
+        
+        #Update in the future when algorithm runs
+        self.grid = None 
+        self.graph = None
         
     def calculate_rect_boundary(self) -> Tuple[Coordinate, Coordinate]:
         """Calculates the boundary of the rectangle that contains all the objects
@@ -63,9 +70,9 @@ class Navigator:
         return min_coordinate, max_coordinate
 
     def calc_stretch_factor_and_move(self) -> Tuple[Coordinate, Coordinate, int, int]:
-        move_x = -self.min_coordinate.x
-        move_y = -self.min_coordinate.y
-        self.stretch_factor = self.sample_size/max(self.max_coordinate.x - self.min_coordinate.x, max_coordinate.y - min_coordinate.y)
+        self.move_x = -self.min_coordinate.x
+        self.move_y = -self.min_coordinate.y
+        self.stretch_factor = self.sample_size/max(self.max_coordinate.x - self.min_coordinate.x, self.max_coordinate.y - self.min_coordinate.y)
         
         
     def weight_function(self, u: Coordinate, v: Coordinate) -> float:
