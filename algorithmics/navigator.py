@@ -1,6 +1,7 @@
 from typing import List, Tuple
 
 import networkx as nx
+import shapely as shp
 
 from enemy.enemy import Enemy
 from enemy.black_hole import BlackHole
@@ -11,12 +12,12 @@ from utils.coordinate import Coordinate
 #todo : ADD 1 to each edge of grid to allow manuevering around obstacles
 
 class Navigator:
-        
-    def calculate_rect_boundary(enemies: List[Enemy], source: Coordinate, target: Coordinate) -> Tuple[Coordinate, Coordinate]:
+    def calculate_rect_boundary(self) -> Tuple[Coordinate, Coordinate]:
         """Calculates the boundary of the rectangle that contains all the objects
         
         return a tuple with the minimum and maximum coordinates of the rectangle
         """
+        
         min_coordinate = Coordinate(min(source.x, target.x), min(source.y, target.y))
         max_coordinate = Coordinate(max(source.x, target.x), max(source.y, target.y))
         
@@ -45,13 +46,17 @@ class Navigator:
                 max_coordinate.y = black_hole.center.y + black_hole.radius
         
         return min_coordinate, max_coordinate
+    
+    def calculate_boundries_and_stretch_factor(self) -> Tuple[Coordinate, Coordinate, int, int]:
+        min_coordinate = rect[0]
+        max_coordinate = rect[1]
         
-    def normalize_coordinate(coordinates: Coordinate, min_coordinate: Coordinate, max_coordinate: Coordinate, sample_size: int) -> Coordinate:
-        move_x = min(min_coordinate.x, 0)
-        move_y = min(min_coordinate.y, 0)
-        max_coordinate = max(max_coordinate.x, max_coordinate.y)
+        move_x = -min_coordinate.x
+        move_y = -min_coordinate.y
+        stretch_factor = sample_size/max(max_coordinate.x - min_coordinate.x, max_coordinate.y - min_coordinate.y)
         
-        stretch_factor = sample_size/max_coordinate
+        
+    def normalize_coordinate(self) -> Coordinate:
         return Coordinate(round((coordinates.x + move_x) * stretch_factor), round((coordinates.y + move_y) * stretch_factor())) 
 
     #limited blackhole support
@@ -61,7 +66,7 @@ class Navigator:
         :param enemies: list of enemies
         :return: graph constructed
         """
-        min_coordinate, max_coordinate = calculate_rect_boundary(enemies, Coordinate(0,0), Coordinate(10,10))
+        min_coordinate, max_coordinate = Navigator.calculate_rect_boundary(enemies, Coordinate(0,0), Coordinate(10,10))
         
         astroids = [enemy for enemy in enemies if enemy.__class__.__name__ == 'AsteroidsZone']
         black_holes = [enemy for enemy in enemies if enemy.__class__.__name__ == 'BlackHole']
@@ -74,14 +79,22 @@ class Navigator:
         # 2 - blackhole
         # we divide all the coordinates by max_coordinate to get a value between 0 and 1
         # then we multiply by sample_size to get a value between 0 and sample_size
+        polygons = []
         for astroid in astroids:
             normal_coordinates = []
             for coordinate in astroid.boundary:
-                normal_coordinates.append(normalize_coordinate(coordinate, min_coordinate, max_coordinate, sample_size))
+                normal_coordinates.append(Navigator.normalize_coordinate(coordinate, min_coordinate, max_coordinate, sample_size))
+
+            polygons.append(shp.Polygon(normal_coordinates))
+        
+        for x in range(sample_size):
+            for y in range(sample_size):
+                for polygon in polygons:
+                    if polygon.contains(shp.Point(x, y)):
+                        grid[x][y] = 1
         
         return grid
-
-        
+     
     def calculate_path(source: Coordinate, target: Coordinate, enemies: List[Enemy]) -> Tuple[List[Coordinate], nx.Graph]:
         """Calculates a path from source to target without any detection
 
@@ -102,7 +115,8 @@ class Navigator:
 
 if __name__ == '__main__':
     #test enemy
-    AsteroidsZone(Coordinate(0,0), 1)
+    Coordinates = [Coordinate(0,0), Coordinate(0,1), Coordinate(1,1), Coordinate(1,0)]
+    AsteroidsZone(Coordinates)
     
-    grid = make_grid([])
+    grid = Navigator.make_grid([])
     print(grid)
