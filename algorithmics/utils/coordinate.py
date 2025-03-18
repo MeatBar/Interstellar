@@ -154,3 +154,6 @@ class Coordinate:
 
     def cross(self, other: 'Coordinate') -> float:
         return self.x * other.y - self.y * other.x
+
+    def pos(self):
+        return self.x, self.y
