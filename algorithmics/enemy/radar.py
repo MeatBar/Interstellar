@@ -64,3 +64,16 @@ class Radar(Enemy):
         return [Coordinate(self.center.x + buffed_radius * math.sin(i * angle_step),
                            self.center.y + buffed_radius * math.cos(i * angle_step))
                 for i in range(n)]
+
+    def radar_grid(self, dr: int = 0.1, n: int = 20):
+        """Compute a grid of points inside of the radar radius
+        :param dr: resolution of radial steps in the grid
+        :param n: number of steps to cover in the angular direction
+        """
+        r_steps = int(self.radius/dr)
+        total_grid = []
+        for i in range(r_steps):
+            radius = i * dr
+            fake_radar = Radar(self.center, radius)
+            total_grid += fake_radar.approximate_boundary(n)
+        return total_grid

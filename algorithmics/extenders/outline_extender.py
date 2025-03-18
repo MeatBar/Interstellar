@@ -39,11 +39,23 @@ class OutlineExtender(Extender):
 
         return coordinates
 
+    def get_radar_grids(self) -> List[Coordinate]:
+        """Create list of coordinates representing the grids inside the radar
+
+        :return: The grids
+        """
+        coordinates = []
+        for enemy in self.environment.enemies:
+            if isinstance(enemy, Radar):
+                coordinates.extend(enemy.radar_grid())
+
+        return coordinates
+
     def extend(self, graph: nx.DiGraph) -> None:
 
         print('Initializing graph')
 
-        coordinates = [self.source] + self.targets + self.get_enemies_outlines()
+        coordinates = [self.source] + self.targets + self.get_enemies_outlines() + self.get_radar_grids()
         graph.add_nodes_from(coordinates)
         for start, end in combinations(coordinates, 2):
             self._connect_nodes(graph, start, end)
