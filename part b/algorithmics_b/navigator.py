@@ -2,11 +2,11 @@ from typing import List, Tuple
 
 import networkx as nx
 
-from algorithmics.enemy.enemy import Enemy
-from algorithmics.enemy.environment import Environment
-from algorithmics.extenders.outline_extender import OutlineExtender
-from algorithmics.navigators.simple_navigator import SimpleNavigator
-from algorithmics.utils.coordinate import Coordinate
+from algorithmics_b.enemy.enemy import Enemy
+from algorithmics_b.enemy.environment import Environment
+from algorithmics_b.extenders.outline_extender import OutlineExtender
+from algorithmics_b.navigators.simple_navigator import SimpleNavigator
+from algorithmics_b.utils.coordinate import Coordinate
 
 
 # Navigator

@@ -13,14 +13,14 @@ from dash import dcc, html
 from dash.dependencies import Input, Output, State
 from dash_extensions.enrich import MultiplexerTransform, TriggerTransform, DashProxy
 
-from algorithmics.assets.generate_scatter import generate_path_scatters, generate_graph_scatter, \
+from algorithmics_b.assets.generate_scatter import generate_path_scatters, generate_graph_scatter, \
     generate_all_scenario_scatters, \
     generate_graph_layout
-from algorithmics.enemy.asteroids_zone import AsteroidsZone
-from algorithmics.enemy.black_hole import BlackHole
-from algorithmics.enemy.enemy import Enemy
-from algorithmics.navigator import calculate_path
-from algorithmics.utils.coordinate import Coordinate
+from algorithmics_b.enemy.asteroids_zone import AsteroidsZone
+from algorithmics_b.enemy.black_hole import BlackHole
+from algorithmics_b.enemy.enemy import Enemy
+from algorithmics_b.navigator import calculate_path
+from algorithmics_b.utils.coordinate import Coordinate
 
 KEY = b'nNjpIl9Ax2LRtm-p6ryCRZ8lRsL0DtuY0f9JeAe2wG0='
 

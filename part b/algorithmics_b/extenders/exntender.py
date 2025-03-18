@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 
 import networkx as nx
 
-from algorithmics.enemy.environment import Environment
-from algorithmics.utils.coordinate import Coordinate
+from algorithmics_b.enemy.environment import Environment
+from algorithmics_b.utils.coordinate import Coordinate
 
 
 class Extender(ABC):

@@ -1,7 +1,7 @@
 from typing import List
 
-from algorithmics.enemy.enemy import Enemy
-from algorithmics.utils.coordinate import Coordinate
+from algorithmics_b.enemy.enemy import Enemy
+from algorithmics_b.utils.coordinate import Coordinate
 
 
 class AsteroidsZone(Enemy):

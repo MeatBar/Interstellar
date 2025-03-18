@@ -1,17 +1,17 @@
 import math
 from typing import List, Tuple, Optional
 
-from algorithmics.enemy.asteroids_zone import AsteroidsZone
-from algorithmics.enemy.black_hole import BlackHole
-from algorithmics.enemy.enemy import Enemy
-from algorithmics.enemy.radar import Radar
+from algorithmics_b.enemy.asteroids_zone import AsteroidsZone
+from algorithmics_b.enemy.black_hole import BlackHole
+from algorithmics_b.enemy.enemy import Enemy
+from algorithmics_b.enemy.radar import Radar
 
 try:
     import plotly.graph_objects as go
 except:
     import plotly.graph_objs as go
 
-from algorithmics.utils.coordinate import Coordinate
+from algorithmics_b.utils.coordinate import Coordinate
 
 
 def generate_coordinate_scatter(coordinate: Coordinate, color: str = '#ff5500', hovertext=None, symbol: str = 'circle') \

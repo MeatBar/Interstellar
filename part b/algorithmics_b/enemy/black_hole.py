@@ -1,8 +1,8 @@
 import math
 from typing import List
 
-from algorithmics.enemy.asteroids_zone import AsteroidsZone
-from algorithmics.utils.coordinate import Coordinate
+from algorithmics_b.enemy.asteroids_zone import AsteroidsZone
+from algorithmics_b.utils.coordinate import Coordinate
 
 
 class BlackHole(AsteroidsZone):

@@ -3,7 +3,7 @@ from typing import List
 
 import networkx as nx
 
-from algorithmics.utils.coordinate import Coordinate
+from algorithmics_b.utils.coordinate import Coordinate
 
 
 class Navigator(ABC):

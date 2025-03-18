@@ -1,8 +1,8 @@
 from typing import List
 
-from algorithmics.enemy.enemy import Enemy
-from algorithmics.enemy.radar import Radar
-from algorithmics.utils.coordinate import Coordinate
+from algorithmics_b.enemy.enemy import Enemy
+from algorithmics_b.enemy.radar import Radar
+from algorithmics_b.utils.coordinate import Coordinate
 
 
 class Environment:

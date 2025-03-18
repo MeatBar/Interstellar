@@ -4,8 +4,8 @@ import numpy as np
 
 from shapely.geometry import Point, LineString
 
-from algorithmics.enemy.enemy import Enemy
-from algorithmics.utils.coordinate import Coordinate
+from algorithmics_b.enemy.enemy import Enemy
+from algorithmics_b.utils.coordinate import Coordinate
 
 
 class Radar(Enemy):

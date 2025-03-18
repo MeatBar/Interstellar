@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from algorithmics.utils.coordinate import Coordinate
+from algorithmics_b.utils.coordinate import Coordinate
 
 
 class Enemy(ABC):

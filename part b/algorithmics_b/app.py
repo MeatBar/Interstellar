@@ -1,5 +1,4 @@
 import json
-import json
 import os
 import re
 import time
@@ -14,15 +13,15 @@ from dash import dcc, html
 from dash.dependencies import Input, Output, State
 from dash_extensions.enrich import MultiplexerTransform, TriggerTransform, DashProxy
 
-from algorithmics.assets.generate_scatter import generate_path_scatters, generate_graph_scatter, \
+from algorithmics_b.assets.generate_scatter import generate_path_scatters, generate_graph_scatter, \
     generate_all_scenario_scatters, \
     generate_graph_layout
-from algorithmics.enemy.asteroids_zone import AsteroidsZone
-from algorithmics.enemy.black_hole import BlackHole
-from algorithmics.enemy.enemy import Enemy
-from algorithmics.enemy.radar import Radar
-from algorithmics.navigator import calculate_path
-from algorithmics.utils.coordinate import Coordinate
+from algorithmics_b.enemy.asteroids_zone import AsteroidsZone
+from algorithmics_b.enemy.black_hole import BlackHole
+from algorithmics_b.enemy.enemy import Enemy
+from algorithmics_b.enemy.radar import Radar
+from algorithmics_b.navigator import calculate_path
+from algorithmics_b.utils.coordinate import Coordinate
 
 KEY = b'nNjpIl9Ax2LRtm-p6ryCRZ8lRsL0DtuY0f9JeAe2wG0='
 
@@ -41,19 +40,19 @@ def _extract_scenario_number_from_path(path: str) -> int:
     return int(re.match(r'.*scenario_(\d+)\.json', path).group(1))
 
 
-scenario_groups = os.listdir(Path('../resources/scenarios'))
+scenario_groups = os.listdir(Path('../resources_b/scenarios'))
 
-scenario_paths = {group: sorted(os.listdir(join(Path('../resources/scenarios'), group)),
+scenario_paths = {group: sorted(os.listdir(join(Path('../resources_b/scenarios'), group)),
                                 key=lambda path: _extract_scenario_number_from_path(path))
                   for group in scenario_groups}
 
 for group, files in scenario_paths.items():
-    scenario_paths[group] = [join(Path('../resources/scenarios'), group, f) for f in files]
+    scenario_paths[group] = [join(Path('../resources_b/scenarios'), group, f) for f in files]
 
 scenario_groups = sorted(scenario_groups,
                          key=lambda group: _extract_scenario_number_from_path(scenario_paths[group][0]))
 
-with open('../resources/scenario_names.json', 'r') as f:
+with open('../resources_b/scenario_names.json', 'r') as f:
     scenario_names = json.load(f)
     scenario_names = {int(number): name for number, name in scenario_names.items()}
 

@@ -2,8 +2,8 @@ from typing import List
 
 import networkx as nx
 
-from algorithmics.navigators.navigator import Navigator
-from algorithmics.utils.coordinate import Coordinate
+from algorithmics_b.navigators.navigator import Navigator
+from algorithmics_b.utils.coordinate import Coordinate
 
 
 class SimpleNavigator(Navigator):
@@ -11,7 +11,7 @@ class SimpleNavigator(Navigator):
 
     def compute_path(self, graph: nx.DiGraph, source: Coordinate, targets: List[Coordinate], max_detection: float) -> \
             List[Coordinate]:
-        return nx.shortest_path(graph, source, targets[0], weight='dist')
+        return nx.astar_path(graph, source, targets[0], weight='dist')
 
     def assert_input_legality(self, targets: List[Coordinate], max_detection: float) -> None:
         if len(targets) == 1 and max_detection == 0:

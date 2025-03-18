@@ -3,12 +3,12 @@ from typing import List
 
 import networkx as nx
 
-from algorithmics.enemy.asteroids_zone import AsteroidsZone
-from algorithmics.enemy.black_hole import BlackHole
-from algorithmics.enemy.environment import Environment
-from algorithmics.enemy.radar import Radar
-from algorithmics.extenders.exntender import Extender
-from algorithmics.utils.coordinate import Coordinate
+from algorithmics_b.enemy.asteroids_zone import AsteroidsZone
+from algorithmics_b.enemy.black_hole import BlackHole
+from algorithmics_b.enemy.environment import Environment
+from algorithmics_b.enemy.radar import Radar
+from algorithmics_b.extenders.exntender import Extender
+from algorithmics_b.utils.coordinate import Coordinate
 
 
 class OutlineExtender(Extender):
@@ -57,7 +57,7 @@ class OutlineExtender(Extender):
 
         print('Initializing graph')
 
-        coordinates = [self.source] + self.targets + self.get_enemies_outlines() + self.get_radar_grids(20, 20)
+        coordinates = [self.source] + self.targets + self.get_enemies_outlines() + self.get_radar_grids(10, 20)
         graph.add_nodes_from(coordinates)
         print("Got nodes")
         for start, end in combinations(coordinates, 2):
