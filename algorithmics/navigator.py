@@ -20,6 +20,8 @@ class Navigator:
         self.target = target
         self.sample_size = sample_size
         
+        self.polygons = [] #Not rounded
+        self.int_polygons = [] #Rounded
         
         min_coordinate, max_coordinate = self.calc_rect_boundary()      
         self.min_coordinate = min_coordinate
@@ -34,7 +36,21 @@ class Navigator:
         #Update in the future when algorithm runs
         self.grid = None 
         self.graph = None
+      
+    #TODO: Add blackholes to the polygons
+    def process_polygons(self):
+        astroids = [enemy for enemy in self.enemies if enemy.__class__.__name__ == 'AsteroidsZone']
+        black_holes = [enemy for enemy in self.enemies if enemy.__class__.__name__ == 'BlackHole']
         
+        for astroid in astroids:
+            normal_coordinates = []
+            for coordinate in astroid.boundary:
+                normal_coordinates.append(self.normalize_coordinate(coordinate))
+            self.polygons.append(shp.Polygon(normal_coordinates))
+            
+        for polygon in self.polygons:
+            self.int_polygons.append(polygon.buffer(0))
+      
     def calc_rect_boundary(self) -> Tuple[Coordinate, Coordinate]:
         """Calculates the boundary of the rectangle that contains all the objects
 
@@ -86,10 +102,18 @@ class Navigator:
             return float('inf')
         return u.distance_to(v)
 
-    def normalize_coordinate(self, coordinates: Coordinate) -> Coordinate:
-        x = round((coordinates.x + self.move_x) * self.stretch_factor)
-        y = round((coordinates.y + self.move_y) * self.stretch_factor)
+    def apply_norm(self, coord: Coordinate) -> Coordinate:
+        """
+        apply the normaling function without rounding
+
+        """
+        x = (coord.x + self.move_x) * self.stretch_factor
+        y = (coord.y + self.move_y) * self.stretch_factor
         return Coordinate(x, y)
+
+    def normalize_coordinate(self, coordinates: Coordinate) -> Coordinate:
+        cord = self.apply_norm(coordinates)
+        return Coordinate(round(cord.x), round(cord.y))
 
     def grid_to_pos(self, i, j):
         x = (i / self.stretch_factor) - self.move_x
