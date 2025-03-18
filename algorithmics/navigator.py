@@ -19,11 +19,15 @@ class Navigator:
         self.source = source
         self.target = target
         self.sample_size = sample_size
-        min_coordinate, max_coordinate = self.calculate_rect_boundary()
+        
+        min_coordinate, max_coordinate = self.calculate_rect_boundary()      
         self.min_coordinate = min_coordinate
         self.max_coordinate = max_coordinate
+  
         self.stretch_factor = 1
-
+        self.move_x = 0
+        self.move_y = 0
+        
     def calculate_rect_boundary(self) -> Tuple[Coordinate, Coordinate]:
         """Calculates the boundary of the rectangle that contains all the objects
 
@@ -58,14 +62,11 @@ class Navigator:
 
         return min_coordinate, max_coordinate
 
-    def calculate_boundries_and_stretch_factor(self) -> Tuple[Coordinate, Coordinate, int, int]:
-        min_coordinate = rect[0]
-        max_coordinate = rect[1]
+    def calc_stretch_factor_and_move(self) -> Tuple[Coordinate, Coordinate, int, int]:
+        move_x = -self.min_coordinate.x
+        move_y = -self.min_coordinate.y
+        self.stretch_factor = self.sample_size/max(self.max_coordinate.x - self.min_coordinate.x, max_coordinate.y - min_coordinate.y)
         
-        move_x = -min_coordinate.x
-        move_y = -min_coordinate.y
-        stretch_factor = sample_size/max(max_coordinate.x - min_coordinate.x, max_coordinate.y - min_coordinate.y)
-    
         
     def weight_function(self, u: Coordinate, v: Coordinate) -> float:
         """
@@ -79,12 +80,9 @@ class Navigator:
         return u.distance_to(v)
 
     def normalize_coordinate(self, coordinates: Coordinate) -> Coordinate:
-        move_x = min(self.min_coordinate.x, 0)
-        move_y = min(self.min_coordinate.y, 0)
-        max_coordinate = max(self.max_coordinate.x, self.max_coordinate.y)
-
-        stretch_factor = self.sample_size/max_coordinate
-        return Coordinate(round((coordinates.x + move_x) * stretch_factor), round((coordinates.y + move_y) * self.stretch_factor))
+        x = round((coordinates.x + self.move_x) * self.stretch_factor)
+        y = round((coordinates.y + self.move_y) * self.stretch_factor)
+        return Coordinate(x, y)
     
     #limited blackhole support
     def make_grid(self) -> nx.Graph:
@@ -117,10 +115,10 @@ class Navigator:
         min_coordinate, max_coordinate = Navigator.calculate_rect_boundary(enemies, Coordinate(0,0), Coordinate(10,10))
         """
         
-        astroids = [enemy for enemy in enemies if enemy.__class__.__name__ == 'AsteroidsZone']
-        black_holes = [enemy for enemy in enemies if enemy.__class__.__name__ == 'BlackHole']
+        astroids = [enemy for enemy in self.enemies if enemy.__class__.__name__ == 'AsteroidsZone']
+        black_holes = [enemy for enemy in self.enemies if enemy.__class__.__name__ == 'BlackHole']
         
-        grid = [[0]*sample_size] * sample_size
+        grid = [[0]*self.sample_size] * self.sample_size
         
         #Uristic:
         # 0 - empty
@@ -136,8 +134,8 @@ class Navigator:
 
             polygons.append(shp.Polygon(normal_coordinates))
         
-        for x in range(sample_size):
-            for y in range(sample_size):
+        for x in range(self.sample_size):
+            for y in range(self.sample_size):
                 for polygon in polygons:
                     if polygon.contains(shp.Point(x, y)):
                         grid[x][y] = 1
