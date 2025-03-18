@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
 import networkx as nx
-import shapely
+import shapely as shp
 
 from enemy.enemy import Enemy
 from enemy.black_hole import BlackHole
@@ -60,6 +60,15 @@ class Navigator:
 
         return min_coordinate, max_coordinate
 
+    def calculate_boundries_and_stretch_factor(self) -> Tuple[Coordinate, Coordinate, int, int]:
+        min_coordinate = rect[0]
+        max_coordinate = rect[1]
+        
+        move_x = -min_coordinate.x
+        move_y = -min_coordinate.y
+        stretch_factor = sample_size/max(max_coordinate.x - min_coordinate.x, max_coordinate.y - min_coordinate.y)
+    
+        
     def weight_function(self, u: Coordinate, v: Coordinate) -> float:
         """
         Weight function for the edges of the graph
@@ -84,25 +93,38 @@ class Navigator:
         return Coordinate(i,j)
 
     #limited blackhole support
-    def make_grid(self) -> List[List[int]]:
+    def make_grid(self) -> nx.Graph:
+        """Creates a graph from the list of enemies
+            :param enemies: list of enemies
+            :return: graph constructed
         """
+        min_coordinate, max_coordinate = self.calculate_rect_boundary()
 
-        """
         astroids = [enemy for enemy in self.enemies if enemy.__class__.__name__ == 'AsteroidsZone']
         black_holes = [enemy for enemy in self.enemies if enemy.__class__.__name__ == 'BlackHole']
 
-        grid = [[0]*self.sample_size] * self.sample_size
+        grid = [[0] * self.sample_size] * self.sample_size
 
-        #Uristic:
+        # Uristic:
         # 0 - empty
         # 1 - astroid
         # 2 - blackhole
         # we divide all the coordinates by max_coordinate to get a value between 0 and 1
         # then we multiply by sample_size to get a value between 0 and sample_size
+        polygons = []
         for astroid in astroids:
             normal_coordinates = []
             for coordinate in astroid.boundary:
-                normal_coordinates.append(self.normalize_coordinate(coordinate))
+                normal_coordinates.append(
+                    Navigator.normalize_coordinate(coordinate, min_coordinate, max_coordinate, sample_size))
+
+            polygons.append(shp.Polygon(normal_coordinates))
+
+        for x in range(self.sample_size):
+            for y in range(self.sample_size):
+                for polygon in polygons:
+                    if polygon.contains(shp.Point(x, y)):
+                        grid[x][y] = 1
 
         return grid
 
