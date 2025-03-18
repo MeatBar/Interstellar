@@ -52,7 +52,7 @@ class Coordinate:
     ('Coordiante(x=1.0, y=4.0)', 'Coordinate(x=1.0, y=4.0)')
     """
 
-    def __init__(self, x: float, y: float) -> None:
+    def __init__(self, x: float, y: float, field_type: int = 0) -> None:
         """Initializes a coordinate given its `x`, `y` values
 
         :param x: x value of the coordinate
@@ -62,6 +62,7 @@ class Coordinate:
 
         self.x = x
         self.y = y
+        self.field_type = field_type
 
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, Coordinate):
@@ -112,7 +113,7 @@ class Coordinate:
         return math.sqrt(self.x ** 2 + self.y ** 2)
 
     def __str__(self) -> str:
-        return f'Coordinate(x={self.x}, y={self.y})'
+        return f'Coordinate(x={self.x}, y={self.y}, type={self.field_type})'
 
     def __repr__(self) -> str:
         return str(self)
@@ -153,3 +154,6 @@ class Coordinate:
 
     def cross(self, other: 'Coordinate') -> float:
         return self.x * other.y - self.y * other.x
+
+    def pos(self):
+        return self.x, self.y

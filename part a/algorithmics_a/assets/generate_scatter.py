@@ -4,7 +4,6 @@ from typing import List, Tuple, Optional
 from algorithmics.enemy.asteroids_zone import AsteroidsZone
 from algorithmics.enemy.black_hole import BlackHole
 from algorithmics.enemy.enemy import Enemy
-from algorithmics.enemy.radar import Radar
 
 try:
     import plotly.graph_objects as go
@@ -122,13 +121,11 @@ def generate_all_scenario_scatters(source: Coordinate, targets: List[Coordinate]
     zones = [generate_polygon_scatter(zone.boundary, color='#4dc3ff', hover_text=f'Asteroids Zone {i + 1}')
              for i, zone in enumerate(e for e in enemies if isinstance(e, AsteroidsZone)
                                       and not isinstance(e, BlackHole))]
-    radars = [generate_circle_scatter(radar.center, radar.radius, color='#ff0080', hover_text=f'Radar {i + 1}')
-              for i, radar in enumerate(e for e in enemies if isinstance(e, Radar))]
     source = [generate_coordinate_scatter(source, color='#bfff80', hovertext='source', symbol='triangle-ne')]
     targets = [generate_coordinate_scatter(target, color='#ff704d', hovertext='target', symbol='diamond')
                for target in targets]
 
-    return holes + zones + radars + source + targets
+    return holes + zones + source + targets
 
 
 def generate_graph_layout() -> go.Layout:

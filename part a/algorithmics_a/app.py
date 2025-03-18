@@ -1,5 +1,4 @@
 import json
-import json
 import os
 import re
 import time
@@ -20,7 +19,6 @@ from algorithmics.assets.generate_scatter import generate_path_scatters, generat
 from algorithmics.enemy.asteroids_zone import AsteroidsZone
 from algorithmics.enemy.black_hole import BlackHole
 from algorithmics.enemy.enemy import Enemy
-from algorithmics.enemy.radar import Radar
 from algorithmics.navigator import calculate_path
 from algorithmics.utils.coordinate import Coordinate
 
@@ -41,19 +39,19 @@ def _extract_scenario_number_from_path(path: str) -> int:
     return int(re.match(r'.*scenario_(\d+)\.json', path).group(1))
 
 
-scenario_groups = os.listdir(Path('../resources/scenarios'))
+scenario_groups = os.listdir(Path('../resources_a/scenarios'))
 
-scenario_paths = {group: sorted(os.listdir(join(Path('../resources/scenarios'), group)),
+scenario_paths = {group: sorted(os.listdir(join(Path('../resources_a/scenarios'), group)),
                                 key=lambda path: _extract_scenario_number_from_path(path))
                   for group in scenario_groups}
 
 for group, files in scenario_paths.items():
-    scenario_paths[group] = [join(Path('../resources/scenarios'), group, f) for f in files]
+    scenario_paths[group] = [join(Path('../resources_a/scenarios'), group, f) for f in files]
 
 scenario_groups = sorted(scenario_groups,
                          key=lambda group: _extract_scenario_number_from_path(scenario_paths[group][0]))
 
-with open('../resources/scenario_names.json', 'r') as f:
+with open('../resources_a/scenario_names.json', 'r') as f:
     scenario_names = json.load(f)
     scenario_names = {int(number): name for number, name in scenario_names.items()}
 
@@ -109,10 +107,6 @@ app.layout = html.Div([
                           value=[],
                           style={'font-family': 'Courier New', 'font-weight': 'bold', 'margin-top': '5px',
                                  'margin-bottom': '5px', 'color': '#ffffff', 'display': 'inline-block'}),
-            html.Div(id='allowed-detection', children='Allowed detection: 0 miles',
-                     style={'font-family': 'Courier New', 'font-weight': 'bold', 'margin-top': '5px',
-                            'margin-bottom': '5px', 'margin-left': 'auto', 'color': '#e61010',
-                            'display': 'inline-block'}),
         ],
         style={'display': 'flex'}
     ),
@@ -152,23 +146,20 @@ def _parse_coordinate(values: List[float]) -> Coordinate:
     return Coordinate(values[0], values[1])
 
 
-def _load_scenario(scenario_path: str) -> Tuple[Coordinate, List[Coordinate], float, List[Enemy]]:
+def _load_scenario(scenario_path: str) -> tuple[Coordinate, list[Coordinate], list[Enemy]]:
     with open(scenario_path, 'r') as f:
         raw_scenario = json.load(f)
 
     # Parse scenario JSON
     source = _parse_coordinate(raw_scenario['source'])
     targets = [_parse_coordinate(target) for target in raw_scenario['targets']]
-    allowed_detection = raw_scenario['allowed-detection']
     enemies: List[Enemy] = []
     enemies += [BlackHole(_parse_coordinate(hole['center']), hole['radius'])
                 for hole in raw_scenario['black_holes']]
     enemies += [AsteroidsZone([_parse_coordinate(c) for c in raw_zone['boundary']])
                 for raw_zone in raw_scenario['asteroids_zones']]
-    enemies += [Radar(_parse_coordinate(raw_radar['center']), raw_radar['radius'])
-                for raw_radar in raw_scenario['radars']]
 
-    return source, targets, allowed_detection, enemies
+    return source, targets, enemies
 
 
 @app.callback(Output('scenario-dropdown', 'options'),
@@ -188,14 +179,13 @@ def reset_path_panel(scenario: str) -> Optional[str]:
 
 
 @app.callback(Output('graph', 'figure'),
-              Output('allowed-detection', 'children'),
               Input('scenario-dropdown', 'value'),
               Input('path-store', 'data'),
               Input('edges-store', 'data'),
               Input('graph-toggle', 'value'))
 def update_map(scenario_path: str, path: List[Tuple[float, float]],
-               edges: List[Tuple[float, float, float, float]], graph_on: str) -> Tuple[go.Figure, str]:
-    source, targets, allowed_detection, enemies = _load_scenario(scenario_path)
+               edges: List[Tuple[float, float, float, float]], graph_on: str) -> go.Figure:
+    source, targets, enemies = _load_scenario(scenario_path)
 
     # If only scenario was changed, path and graph are empty
     if dash.callback_context.triggered[0]['prop_id'].split('.')[0] == 'scenario-dropdown':
@@ -208,7 +198,7 @@ def update_map(scenario_path: str, path: List[Tuple[float, float]],
 
     data = generate_all_scenario_scatters(source, targets, enemies) + \
            generate_path_scatters(draw_path, color='#cccccc') + edges_scatter
-    return go.Figure(data=data, layout=generate_graph_layout()), f'Allowed detection: {allowed_detection} miles'
+    return go.Figure(data=data, layout=generate_graph_layout())
 
 
 @app.callback(Output('path-store', 'data'),
@@ -219,11 +209,11 @@ def update_map(scenario_path: str, path: List[Tuple[float, float]],
               prevent_initial_call=True)
 def run_button_n_clicks_changed(n_clicks: int, scenario_path: str) -> \
         Tuple[List[Tuple[float, float]], List[Tuple[float, ...]], float]:
-    source, targets, allowed_detection, enemies = _load_scenario(scenario_path)
+    source, targets, enemies = _load_scenario(scenario_path)
 
     # Dash doesn't support custom return types from callbacks, so we convert the path into a list of tuples
     start_time = time.time()
-    path, graph = calculate_path(source, targets, enemies, allowed_detection)
+    path, graph = calculate_path(source, targets[0], enemies)
     calculation_time = time.time() - start_time
     return [(c.x, c.y) for c in path], [(edge[0].x, edge[0].y, edge[1].x, edge[1].y) for edge in
                                         graph.edges], calculation_time
@@ -250,4 +240,4 @@ def generate_path_file(path: List[Tuple[float, float]], calculation_time: float)
 
 
 if __name__ == '__main__':
-    app.run_server(host='127.0.0.1', port=7324, dev_tools_silence_routes_logging=True)
+    app.run_server(host='0.0.0.0', port=7324, dev_tools_silence_routes_logging=True)
