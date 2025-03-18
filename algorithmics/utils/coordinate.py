@@ -52,7 +52,7 @@ class Coordinate:
     ('Coordiante(x=1.0, y=4.0)', 'Coordinate(x=1.0, y=4.0)')
     """
 
-    def __init__(self, x: float, y: float) -> None:
+    def __init__(self, x: float, y: float, field_type: int = 0) -> None:
         """Initializes a coordinate given its `x`, `y` values
 
         :param x: x value of the coordinate
@@ -62,6 +62,7 @@ class Coordinate:
 
         self.x = x
         self.y = y
+        self.field_type = field_type
 
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, Coordinate):
