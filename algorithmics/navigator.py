@@ -21,7 +21,7 @@ class Navigator:
         self.sample_size = sample_size
         
         
-        min_coordinate, max_coordinate = self.calculate_rect_boundary()      
+        min_coordinate, max_coordinate = self.calc_rect_boundary()      
         self.min_coordinate = min_coordinate
         self.max_coordinate = max_coordinate
   
@@ -29,13 +29,13 @@ class Navigator:
         self.stretch_factor = 1
         self.move_x = 0
         self.move_y = 0
-        self.calculate_stretch_factor_and_move() #Update those values
+        self.calc_stretch_factor_and_move() #Update those values
         
         #Update in the future when algorithm runs
         self.grid = None 
         self.graph = None
         
-    def calculate_rect_boundary(self) -> Tuple[Coordinate, Coordinate]:
+    def calc_rect_boundary(self) -> Tuple[Coordinate, Coordinate]:
         """Calculates the boundary of the rectangle that contains all the objects
 
         return a tuple with the minimum and maximum coordinates of the rectangle
