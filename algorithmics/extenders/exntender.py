@@ -25,7 +25,8 @@ class Extender(ABC):
             return
 
         if not self.environment.is_leg_legal_only_radars(start, end):
-            return
+            # Changed this to allow illegal radar moves
+            pass
 
         dist = start.distance_to(end)
         graph.add_edge(start, end, dist=dist)

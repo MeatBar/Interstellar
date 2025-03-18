@@ -32,5 +32,6 @@ def calculate_path(source: Coordinate, targets: List[Coordinate], enemies: List[
     OutlineExtender(env, source, targets).extend(graph)
     PRMExtender(env).extend(graph)
 
-    path = SimpleNavigator().navigate(graph, source, targets, allowed_detection)
+    nav = SimpleNavigator(enemies)
+    path = nav.navigate(graph, source, targets, allowed_detection)
     return path, graph

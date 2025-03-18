@@ -49,7 +49,6 @@ class Radar(Enemy):
         return 2 * math.pi - angle_diff
 
     def is_legal_leg(self, start: Coordinate, end: Coordinate) -> bool:
-
         radar_intersection = LineString([[start.x, start.y], [end.x, end.y]]).intersection(self.circle)
         if radar_intersection.length == 0:
             return True
