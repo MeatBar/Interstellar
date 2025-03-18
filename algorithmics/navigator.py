@@ -42,6 +42,14 @@ def calculate_rect_boundary(enemies: List[Enemy], source: Coordinate, target: Co
     
     return min_coordinate, max_coordinate
     
+def normalize_coordinate(coordinates: Coordinate, min_coordinate: Coordinate, max_coordinate: Coordinate, sample_size: int) -> Coordinate:
+    move_x = min(min_coordinate.x, 0)
+    move_y = min(min_coordinate.y, 0)
+    max_coordinate = max(max_coordinate.x, max_coordinate.y)
+    
+    stretch_factor = sample_size/max_coordinate
+    return Coordinate(round((coordinates.x + move_x) * stretch_factor), round((coordinates.y + move_y) * stretch_factor())) 
+
 #limited blackhole support
 def make_grid(enemies: List[Enemy], sample_size :int = 8) -> nx.Graph:
     """Creates a graph from the list of enemies
@@ -49,7 +57,8 @@ def make_grid(enemies: List[Enemy], sample_size :int = 8) -> nx.Graph:
     :param enemies: list of enemies
     :return: graph constructed
     """
-    graph = nx.Graph()
+    min_coordinate, max_coordinate = calculate_rect_boundary(enemies, Coordinate(0,0), Coordinate(10,10))
+    
     astroids = [enemy for enemy in enemies if enemy.__class__.__name__ == 'AsteroidsZone']
     black_holes = [enemy for enemy in enemies if enemy.__class__.__name__ == 'BlackHole']
     
@@ -64,7 +73,7 @@ def make_grid(enemies: List[Enemy], sample_size :int = 8) -> nx.Graph:
     for astroid in astroids:
         normal_coordinates = []
         for coordinate in astroid.boundary:
-            normal_coordinates.append(coordinate * (sample_size / max_coordinate))
+            normal_coordinates.append(normalize_coordinate(coordinate, min_coordinate, max_coordinate, sample_size))
     
     return grid
 
