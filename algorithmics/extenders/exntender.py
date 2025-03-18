@@ -21,8 +21,9 @@ class Extender(ABC):
         :return: None
         """
 
-        if not self.environment.is_leg_legal_only_no_entrances(start, end):
+        if not self.environment.is_legal_leg(start, end):
             return
+
 
         dist = start.distance_to(end)
         graph.add_edge(start, end, dist=dist)

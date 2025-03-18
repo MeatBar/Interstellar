@@ -47,3 +47,4 @@ class OutlineExtender(Extender):
         graph.add_nodes_from(coordinates)
         for start, end in combinations(coordinates, 2):
             self._connect_nodes(graph, start, end)
+
