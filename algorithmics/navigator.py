@@ -1,6 +1,7 @@
 from typing import List, Tuple
 
 import networkx as nx
+import shapely
 
 from enemy.enemy import Enemy
 from enemy.black_hole import BlackHole
@@ -22,6 +23,8 @@ class Navigator:
         self.min_coordinate = min_coordinate
         self.max_coordinate = max_coordinate
         self.stretch_factor = 1
+        self.move_x = 0
+        self.move_y = 0
 
     def calculate_rect_boundary(self) -> Tuple[Coordinate, Coordinate]:
         """Calculates the boundary of the rectangle that contains all the objects
@@ -76,31 +79,32 @@ class Navigator:
         stretch_factor = self.sample_size/max_coordinate
         return Coordinate(round((coordinates.x + move_x) * stretch_factor), round((coordinates.y + move_y) * self.stretch_factor))
 
+    def grid_to_pos(self, i, j):
+        #TODO: WRITE THIS
+        return Coordinate(i,j)
+
     #limited blackhole support
-    def make_grid(self) -> nx.Graph:
-        """Creates a graph from the list of enemies
-            :param enemies: list of enemies
-            :return: graph constructed
-            """
-            min_coordinate, max_coordinate = self.calculate_rect_boundary()
+    def make_grid(self) -> List[List[int]]:
+        """
 
-            astroids = [enemy for enemy in self.enemies if enemy.__class__.__name__ == 'AsteroidsZone']
-            black_holes = [enemy for enemy in self.enemies if enemy.__class__.__name__ == 'BlackHole']
+        """
+        astroids = [enemy for enemy in self.enemies if enemy.__class__.__name__ == 'AsteroidsZone']
+        black_holes = [enemy for enemy in self.enemies if enemy.__class__.__name__ == 'BlackHole']
 
-            grid = [[0]*self.sample_size] * self.sample_size
+        grid = [[0]*self.sample_size] * self.sample_size
 
-            #Uristic:
-            # 0 - empty
-            # 1 - astroid
-            # 2 - blackhole
-            # we divide all the coordinates by max_coordinate to get a value between 0 and 1
-            # then we multiply by sample_size to get a value between 0 and sample_size
-            for astroid in astroids:
-                normal_coordinates = []
-                for coordinate in astroid.boundary:
-                    normal_coordinates.append(self.normalize_coordinate(coordinate, min_coordinate, max_coordinate, sample_size))
+        #Uristic:
+        # 0 - empty
+        # 1 - astroid
+        # 2 - blackhole
+        # we divide all the coordinates by max_coordinate to get a value between 0 and 1
+        # then we multiply by sample_size to get a value between 0 and sample_size
+        for astroid in astroids:
+            normal_coordinates = []
+            for coordinate in astroid.boundary:
+                normal_coordinates.append(self.normalize_coordinate(coordinate))
 
-            return grid
+        return grid
 
     def grid_to_graph(self, grid: List[List[int]]) -> nx.Graph:
         """
@@ -123,20 +127,50 @@ class Navigator:
                 v = None
                 # TODO: if running time is a problem, could maybe cut this by half by only doing right and down
                 if i > 0 and grid[i - 1][j] == 0:
-                    u = Coordinate(*grid_to_pos(i, j), grid[i][j])
-                    v = Coordinate(*grid_to_pos(i - 1, j), grid[i - 1][j])
+                    u = Coordinate(*self.grid_to_pos(i, j), grid[i][j])
+                    v = Coordinate(*self.grid_to_pos(i - 1, j), grid[i - 1][j])
                 if j > 0 and grid[i][j - 1] == 0:
-                    u = Coordinate(*grid_to_pos(i, j), grid[i][j])
-                    v = Coordinate(*grid_to_pos(i, j-1), grid[i][j-1])
+                    u = Coordinate(*self.grid_to_pos(i, j), grid[i][j])
+                    v = Coordinate(*self.grid_to_pos(i, j-1), grid[i][j-1])
                 if i < len(grid) - 1 and grid[i + 1][j] == 0:
-                    u = Coordinate(*grid_to_pos(i, j), grid[i][j])
-                    v = Coordinate(*grid_to_pos(i+1, j), grid[i + 1][j])
+                    u = Coordinate(*self.grid_to_pos(i, j), grid[i][j])
+                    v = Coordinate(*self.grid_to_pos(i+1, j), grid[i + 1][j])
                 if j < len(grid[0]) - 1 and grid[i][j + 1] == 0:
-                    u = Coordinate(*grid_to_pos(i, j), grid[i][j])
-                    v = Coordinate(*grid_to_pos(i, j+1), grid[i][j+1])
+                    u = Coordinate(*self.grid_to_pos(i, j), grid[i][j])
+                    v = Coordinate(*self.grid_to_pos(i, j+1), grid[i][j+1])
                 if u and v:
-                    graph.add_edge(u, v, weight=weight_function(u, v))
+                    graph.add_edge(u, v, weight=self.weight_function(u, v))
         return graph
+
+    def get_closest_point_on_graph(self, coord):
+        normalized_coord = self.normalize_coordinate(coord)
+
+        normalized_coord.x = round(normalized_coord.x)
+        normalized_coord.y = round(normalized_coord.y)
+
+        return self.grid_to_pos(normalized_coord.x, normalized_coord.y)
+
+    def translate_edgelist_to_path(self, edge_list: List[Tuple[Coordinate]]) -> List[Coordinate]:
+        return [edge[0] for edge in edge_list] + [edge_list[-1][1]]
+
+
+    def get_edgelist_from_graph(self, G):
+        source_on_graph = self.get_closest_point_on_graph(self.source)
+        target_on_graph = self.get_closest_point_on_graph(self.target)
+
+        def dist(a, b):
+            return a.distance_to(b)
+
+        path = nx.astar_path(G, source_on_graph, target_on_graph, heuristic=dist, weight='weight')
+        return path
+
+    def get_solution(self):
+        grid = self.make_grid()
+        graph = self.grid_to_graph(grid)
+        edge_list = self.get_edgelist_from_graph(graph)
+        solution = self.translate_edgelist_to_path(edge_list)
+        return [self.source, *solution, self.target]
+
 
 def calculate_path(source: Coordinate, target: Coordinate, enemies: List[Enemy]) -> Tuple[List[Coordinate], nx.Graph]:
     """Calculates a path from source to target without any detection
@@ -153,5 +187,6 @@ def calculate_path(source: Coordinate, target: Coordinate, enemies: List[Enemy])
     # possible path you can calculate from source to target.
     #
     # Note that to be accepted, the returned path must not be detected by the bandits at any point!
-
-    return [source, target], nx.Graph()
+    nav = Navigator(enemies, source, target, 1000)
+    solution = nav.get_solution()
+    return solution, nx.Graph()
