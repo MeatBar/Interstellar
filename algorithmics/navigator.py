@@ -6,17 +6,11 @@ from algorithmics.enemy.enemy import Enemy
 from algorithmics.utils.coordinate import Coordinate
 
 
-def grid_to_pos(i, j, sample_size, min_x, min_y):
+def grid_to_pos(i, j):
     """
-    Converts grid coordinates to position coordinates
-    :param i: grid position
-    :param j: grid position
-    :param sample_size: size of grid
-    :param min_x: starting point of the grid in x
-    :param min_y: starting point of the grid in y
-    :return: x,y position of (i,j) in the map
+    TODO: WRITE THIS
     """
-    return min_x + i * sample_size, min_y + j * sample_size
+    return x, y
 
 
 def weight_function(u: Coordinate, v: Coordinate) -> float:
@@ -31,7 +25,7 @@ def weight_function(u: Coordinate, v: Coordinate) -> float:
     return u.distance_to(v)
 
 
-def grid_to_graph(grid: List[List[int]]) -> nx.Graph:
+def grid_to_graph(grid: List[List[int]], sample_size: int) -> nx.Graph:
     """
     Converts a grid to a graph
     :param grid: 0 if empty, 1 if asteroid, 2 if black hole
@@ -50,18 +44,19 @@ def grid_to_graph(grid: List[List[int]]) -> nx.Graph:
                 continue
             u = None
             v = None
+            # TODO: if running time is a problem, could maybe cut this by half by only doing right and down
             if i > 0 and grid[i - 1][j] == 0:
-                u = Coordinate(i, j, grid[i][j])
-                v = Coordinate(i - 1, j, grid[i - 1][j])
+                u = Coordinate(*grid_to_pos(i, j), grid[i][j])
+                v = Coordinate(*grid_to_pos(i - 1, j), grid[i - 1][j])
             if j > 0 and grid[i][j - 1] == 0:
-                u = Coordinate(i, j, grid[i][j])
-                v = Coordinate(i, j - 1, grid[i][j-1])
+                u = Coordinate(*grid_to_pos(i, j), grid[i][j])
+                v = Coordinate(*grid_to_pos(i, j-1), grid[i][j-1])
             if i < len(grid) - 1 and grid[i + 1][j] == 0:
-                u = Coordinate(i, j, grid[i][j])
-                v = Coordinate(i + 1, j, grid[i + 1][j])
+                u = Coordinate(*grid_to_pos(i, j), grid[i][j])
+                v = Coordinate(*grid_to_pos(i+1, j), grid[i + 1][j])
             if j < len(grid[0]) - 1 and grid[i][j + 1] == 0:
-                u = Coordinate(i, j, grid[i][j])
-                v = Coordinate(i, j + 1, grid[i][j+1])
+                u = Coordinate(*grid_to_pos(i, j), grid[i][j])
+                v = Coordinate(*grid_to_pos(i, j+1), grid[i][j+1])
             if u and v:
                 graph.add_edge(u, v, weight=weight_function(u, v))
     return graph
